@@ -83,6 +83,14 @@ console.log(jonas.species);
 console.log(jonas.hasOwnProperty('firstName'));
 console.log(jonas.hasOwnProperty('species'));
 
+// static methods
+
+Person.hey = function () {
+  console.log('hey there.');
+  // here the this keyword will be the constructor function becoz that is what is calling the function.
+  console.log(this);
+};
+Person.hey();
 // -----------------------------PROTOTYPAL INHERITANCE ON BUILT IN OBJECTS------------------
 
 console.log('---------------------prototypal inheritance --------------------');
@@ -120,24 +128,24 @@ console.dir(x => x + 1);
 console.log(
   '---------------------------coding challenge ------------------------'
 );
-const Car = function (make, speed) {
-  this.make = make;
-  this.speed = speed;
-};
-Car.prototype.accelerate = function () {
-  this.speed += 10;
-  console.log(`${this.make} going at ${this.speed} km/h`);
-};
-Car.prototype.brake = function () {
-  this.speed -= 5;
-  console.log(`${this.make} going at ${this.speed} km/h`);
-};
+// const Car = function (make, speed) {
+//   this.make = make;
+//   this.speed = speed;
+// };
+// Car.prototype.accelerate = function () {
+//   this.speed += 10;
+//   console.log(`${this.make} going at ${this.speed} km/h`);
+// };
+// Car.prototype.brake = function () {
+//   this.speed -= 5;
+//   console.log(`${this.make} going at ${this.speed} km/h`);
+// };
 
-const car1 = new Car('BMW', 100);
-const car2 = new Car('Mercedes', 100);
+// const car1 = new Car('BMW', 100);
+// const car2 = new Car('Mercedes', 100);
 
-car1.accelerate();
-car2.brake();
+// car1.accelerate();
+// car2.brake();
 
 // --------------------------ES6 CLASSES----------------------
 console.log('------------------ES6 classes ----------------------');
@@ -152,6 +160,7 @@ class personCL {
   }
   //   adding methods
   //   so all of these method that we write outside of the constructor will be on the prototype of the objects and not on the object themselves.
+  // Instance methods
   //   Methods will be added to the .prototype property.
   calcAge() {
     console.log(2037 - this.birthYear);
@@ -174,6 +183,12 @@ class personCL {
     return this._fullName;
   }
   // So if we try to look at Jessica Davis you see that right now the property that exists is underscore fullName. And so right now we cannot do jessica.fullName because that simply doesn't exist. And so to fix this we now also need to create a getter for the fullName property.
+
+  // adding static method inside class
+  static hey() {
+    console.log('Hey there');
+    console.log(this);
+  }
 }
 // then inside the class, the first thing that we need to do is to add a constructor method. So just like this, and this constructor actually works in a pretty similar way as a constructor function, so as we studied previously but this one is actually a method of this class. And in fact, it needs to be called constructor. So that is the rule. But just like in constructor functions, we pass in arguments basically for the properties that we want the object to have.
 const Nabeel = new personCL('Nabeel', 2024);
@@ -227,3 +242,173 @@ console.log(walter);
 console.log(walter.fullName);
 
 // we can use getters and setters for validation purposes.
+personCL.hey();
+// so these static methods are not available on instances
+// and sometimes they are still useful to implement some kind of helper function about a class or about a constructor function.
+// -------------------------------object.create-------------------------------
+console.log(
+  '-------------------------------object.create------------------------------'
+);
+const PersonProto = {
+  calcAge() {
+    console.log(2037 - this.birthYear);
+  },
+  init(firstName, birthYear) {
+    this.firstName = firstName;
+    this.birthYear = birthYear;
+  },
+};
+
+const steven = Object.create(PersonProto);
+console.log(steven);
+steven.name = 'Steven';
+steven.birthYear = 1999;
+steven.calcAge();
+console.log(steven.__proto__);
+console.log(steven.__proto__.__proto__ === PersonProto.prototype);
+// PersonProto itself is a regular object, not a constructor function. So, PersonProto does not have a .prototype property.
+const sarah = Object.create(PersonProto);
+sarah.init('Sarah', 1979);
+sarah.calcAge();
+// So the big takeaway is that Object.create creates a new object, and the prototype of that object will be the object that we passed in.
+// ------------------CODING CHALLENGE 2--------------------------
+console.log('-----------------coing challenge 2 ---------------------');
+
+// class Car {
+//   constructor(make, speed) {
+//     this.make = make;
+//     this.speed = speed;
+//   }
+//   accelerate() {
+//     this.speed += 10;
+//     console.log(`${this.make} going at ${this.speed} km/h`);
+//   }
+//   brake() {
+//     this.speed -= 5;
+//     console.log(`${this.make} going at ${this.speed} km/h`);
+//   }
+//   get speedUS() {
+//     return `${this.speed / 1.6} mi/h`;
+//   }
+//   set speedUS(speed) {
+//     this.speed = speed * 1.6;
+//   }
+// }
+
+// ------------------------INHERITANCE BETWEEN CLASSES --------------------------------
+console.log(
+  '---------------------Inheritance between classes-----------------'
+);
+
+const Human = function (firstName, birthYear) {
+  this.firstName = firstName;
+  this.birthYear = birthYear;
+};
+Human.prototype.calcAge = function () {
+  console.log(2037 - this.birthYear);
+};
+
+// child class will have all the arguments of the parent class plus can have some extra arguments
+
+const Student = function (firstName, birthYear, course) {
+  // this.firstName = firstName;
+  // this.birthYear = birthYear;
+  // these above two lines are the simple copy of our Human constructor function and it's also voilating dry principal so instead we can do
+  // Human(firstName, birthYear);
+  // this won't work because in a regular function call this keyword is set to undefined.
+  // so we can use call method to manually set the this keyword
+  Human.call(this, firstName, birthYear);
+  this.course = course;
+};
+// Linking prototypes
+Student.prototype = Object.create(Human.prototype);
+// so here student.prototype object is now inheriting from Human.prototype.
+Student.prototype.introduce = function () {
+  console.log(`Hi, my name is ${this.firstName} and I study ${this.course}`);
+};
+const mike = new Student('Mike', 2020, 'computer science');
+console.log(mike);
+mike.introduce();
+mike.calcAge();
+console.log(mike.__proto__);
+console.log(mike.__proto__.__proto__);
+console.log(mike instanceof Student);
+console.log(mike instanceof Human);
+console.log(mike instanceof Object);
+Student.prototype.constructor = Student;
+console.dir(Student.prototype.constructor);
+
+// ------------------CODING CHALLENGE 3 -----------------------
+
+const Car = function (make, speed) {
+  this.make = make;
+  this.speed = speed;
+};
+Car.prototype.accelerate = function () {
+  this.speed += 10;
+  console.log(`${this.make} going at ${this.speed} km/h`);
+};
+Car.prototype.brake = function () {
+  this.speed -= 5;
+  console.log(`${this.make} going at ${this.speed} km/h`);
+};
+
+const EV = function (make, speed, charge) {
+  Car.call(this, make, speed);
+  this.charge = charge;
+};
+// Linking prototypes
+EV.prototype = Object.create(Car.prototype);
+EV.prototype.constructor = EV;
+// console.dir(EV.prototype.constructor);
+EV.prototype.chargeBattery = function (chargeTo) {
+  this.charge = chargeTo;
+};
+EV.prototype.accelerate = function () {
+  this.speed += 20;
+  this.charge--;
+  console.log(
+    `${this.make} going at ${this.speed} km/h, with a charge of ${this.charge}`
+  );
+};
+
+const tesla = new EV('Tesla', 120, 23);
+tesla.chargeBattery(90);
+console.log(tesla);
+tesla.brake();
+tesla.accelerate();
+
+// -----------------------------INHERITANCE BETWEEN CLASSES : ES6 CLASSES -------------------
+console.log('-----------------------ES6 CLASSES--------------------');
+// here we are gonna inherit from the es6 class instead of constructor function.
+// we will use personcl as our parent class
+// So to implement inheritance between ESXi classes, we only need two ingredients. We need the extend keywords and we need the super function.
+class StudentCL extends personCL {
+  constructor(fullName, birthYear, course) {
+    //now here, we actually don't even need to manually call like personcl not call like we did before in the constructor function. Remember? so here we don't need to do that. What we do instead is to call the super function. And so super is basically the constructor function of the parent class.
+    // Always needs to happen first.
+    // And that's because this call to the super function is responsible for creating the disc keyword in this subclass. And so therefore, without doing this, we wouldn't be able to access the disc keyword to do this. So always first the call to the super so to the parents class constructor. And from there, we will then be able to access the disc keyword.
+    super(fullName, birthYear);
+    // here we pass in the argument of the constructor of the parent class
+    this.course = course;
+  }
+  introduce() {
+    console.log(`Hi, my name is ${this.fullName} and I study ${this.course}`);
+  }
+  calcAge() {
+    // so here this calcAge method will shadow the one present in the parent class.
+    console.log(
+      `Hi, I am ${2037 - this.birthYear} and as a student I feel like I am ${
+        2037 - this.birthYear + 10
+      } years old.`
+    );
+  }
+}
+// const martha = new StudentCL('Martha davis', 2001);
+// console.log(martha);
+// But anyway, this was just to demonstrate to you that if you do not need any new properties, then you don't even need to bother writing a constructor method in the child class.
+
+const martha = new StudentCL('Martha Davis', 2001, 'computer science');
+console.log(martha);
+martha.introduce();
+martha.calcAge();
