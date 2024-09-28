@@ -412,3 +412,60 @@ const martha = new StudentCL('Martha Davis', 2001, 'computer science');
 console.log(martha);
 martha.introduce();
 martha.calcAge();
+// ---------------------------INHERITANCE BETWEEN CLASSES OBJECT.CREATE ----------------------
+console.log(
+  '----------------------------inheritance: object.create ---------------------'
+);
+
+const HumanProto = {
+  calcAge() {
+    console.log(2037 - this.birthYear);
+  },
+  init(firstName, birthYear) {
+    this.firstName = firstName;
+    this.birthYear = birthYear;
+  },
+};
+// here we want to add another prototype in the middle of the chain, so between HumanProto and the object
+
+const Micheal = Object.create(HumanProto);
+// console.log(Micheal);
+
+const StudentProto = Object.create(HumanProto);
+StudentProto.init = function (firstName, birthYear, course) {
+  HumanProto.init.call(this, firstName, birthYear);
+  this.course = course;
+};
+StudentProto.introduce = function () {
+  console.log(`Hi, my name is ${this.firstName} and I study ${this.course}`);
+};
+const hassan = Object.create(StudentProto);
+hassan.init('Nabeel Hassan', 2001, 'artificial intelligence');
+
+console.log(hassan);
+hassan.introduce();
+hassan.calcAge();
+
+// ----------------------------ANOTHER CLASS EXAMPLE --------------------------
+console.log(
+  '----------------------------ANOTHER CLASS EXAMPLE ---------------------'
+);
+
+class Account {
+  constructor(owner, currency, pin) {
+    this.owner = owner;
+    this.currency = currency;
+    this.pin = pin;
+    this.movements = [];
+    this.locale = navigator.language;
+    console.log(`Thanks for opening an account ${owner}`);
+  }
+}
+
+const acc1 = new Account('Rohit', 'EUR', 1111);
+console.log(acc1);
+
+acc1.movements.push(250);
+acc1.movements.push(-150);
+console.log(acc1);
+// we should never interact with the properties directly it's a bad practice instead we should create methods for that.
