@@ -452,20 +452,111 @@ console.log(
 );
 
 class Account {
+  //1. PUBLIC FIELD (this);
+  locale = navigator.language;
+  // _movements = [];
+  // so these public fields are gonna be present on all the instances that we are creating through this class
+  // so they are not on the prototype
+  // so all these methods that we have they are added to the prototype, but the fields here are present on the instances
+
+  // 2. PRIVATE FIELDS
+  // so with private fields we can make it so that the properties are truly not accessible from the outside
+  #movements = [];
+  // so here # is what makes this field private
+  // so for pin, in order to make a field private they must be outside of any constructor.
+  #pin;
+  // here we have first created the pin which is empty and is being later redefined
+  // so these private fields are also present on the instances and not on the prototype.
+
   constructor(owner, currency, pin) {
     this.owner = owner;
     this.currency = currency;
-    this.pin = pin;
-    this.movements = [];
-    this.locale = navigator.language;
+    // protected property
+    // using underscore is just a convention for specifying that it is a protected property
+    // this._pin = pin;
+    this.#pin = pin;
+    // this._movements = [];
+    // this.locale = navigator.language;
     console.log(`Thanks for opening an account ${owner}`);
   }
+  // 3. PUBLIC METHODS;
+  // so all these methods that we are using are public methods only.
+
+  getMovements() {
+    return this.#movements;
+  }
+  // public interface
+  deposit(val) {
+    this.#movements.push(val);
+    return this;
+  }
+  withdrawl(val) {
+    // calling method inside a method
+    this.deposit(-val);
+    return this;
+  }
+  // so these methods are our interface for this object and we also call these api
+  _approveLoan(val) {
+    return true;
+  }
+  // so this approve loan is our internal method that should be accessible to requestLoan method only but now it is accessible to the user
+  // so we need to implement data encapsulation and data privacy.
+
+  requestLoan(val) {
+    if (this._approveLoan(val)) {
+      this.deposit(val);
+      console.log(`Loan approved:`);
+    }
+    return this;
+  }
+  static helper() {
+    console.log('Helper');
+  }
+  // these static methods will not be present on the instance but will be there only on the class
+  // 4. PRIVATE METHODS
+  // they are very useful to hide the implementation details from the outside
+  // to make a private method the syntax is exactly same as the private fields
+  // #approveLoan(val) {
+  //   return true;
+  // }
+  // as of now it is not supported but will be in future
 }
 
 const acc1 = new Account('Rohit', 'EUR', 1111);
 console.log(acc1);
 
-acc1.movements.push(250);
-acc1.movements.push(-150);
+// acc1.movements.push(250);
+// acc1.movements.push(-150);
+acc1.deposit(250);
+acc1.withdrawl(150);
 console.log(acc1);
 // we should never interact with the properties directly it's a bad practice instead we should create methods for that.
+// now there is one more concern that our pin is accessible here
+// console.log(acc1.#pin);
+
+acc1.requestLoan(1000);
+console.log(acc1);
+
+// --------------------------#ENCAPSULATION: PROTECTED PROPERTIES AND METHODS------------
+// encapsulation basically means to keep some properties and methods private inside the class so that they are not accessible from outside of the class. Then the rest of the methods are basically exposed as a public interface, which we can also call API.
+console.log(acc1.getMovements());
+
+// ------------------------------ENCAPSULATION: PRIVATE CLASS FIELDS AND METHODS ---------------------
+// PUBLIC FIELDS
+// PRIVATE FIELDS
+// PUBLIC METHODS
+// PRIVATE METHODS
+// there is also static version
+// now we can't access the private field from the outside
+// console.log(acc1.#movements);
+// console.log(acc1.#pin);
+// console.log(acc1.#approveLoan(100));
+// acc1.helper();
+Account.helper();
+
+// ----------------------------CHAINING METHODS ------------------------
+// all we have to do is to return the object itself at the end of a method that we want to be chainable
+// so returning this from our methods will make the methods chainable because this points to the object itself and without returning this they are not returning anything and pointing to undefined
+
+acc1.deposit(300).deposit(500).withdrawl(35).requestLoan(25000).withdrawl(257);
+console.log(acc1.getMovements());
