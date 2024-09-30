@@ -408,7 +408,7 @@ console.log('Test end');
 // test start and test end will be printed first becoz they are top level code (globle execution context)
 // settimeout callback and promise both will run at the same time and settimeout should be printed first but it is not the case here the promise is printed first because the microtask queue has priority over callback queue.
 */
-
+/*
 //---------------BUILDING A SIMPLE PROMISE ---------------------
 // a fulfilled promise means to win a lottery and rejected promise means to loose a lottery
 // promises are just special kind of object in js
@@ -445,4 +445,151 @@ const wait = function (seconds) {
   // so creating a function and then returning a promise and so this will then encapsulate the asynchronous operation even further.
   // so essentially that's also what the fetch function does.
   // so it's a function that returns a promise, its more real world example.
+  // As I was saying, we are going to return a new promise and then or executor function as always, and then resolve. And in this case, we actually don't even need the reject function. And that's because it's actually impossible for the timer to fail. And so therefore we will never mark this promise as rejected.
+  return new Promise(function (resolve) {
+    setTimeout(resolve, seconds * 1000);
+  });
 };
+
+// now consuming this promise
+// now in this callback I can run any code that i want to get executed after 2 seconds.
+wait(1)
+  .then(() => {
+    console.log('I waited for 1 seconds.');
+    // now if i have to wait again for another 1 second then i can return new promise.
+    return wait(2);
+  })
+  .then(() => {
+    console.log('I waited for 2 more seconds.');
+    return wait(3);
+  })
+  .then(() => {
+    console.log('I waited for 3 more seconds.');
+    return wait(4);
+  })
+  .then(() => {
+    console.log('I waited for 4 more seconds.');
+  });
+// here we have a nice chain of asynchronous behaviour without the callback hell.
+// setTimeout(() => {
+//   console.log('1 second passed');
+//   setTimeout(() => {
+//     console.log('2 seconds passed');
+//     setTimeout(() => {
+//       console.log('3 seconds passed');
+//       setTimeout(() => {
+//         console.log('4 seconds passed');
+//       }, 1000);
+//     }, 1000);
+//   }, 1000);
+// }, 1000);
+
+// now there is also a way to create fullfilled or rejected promise immediately.
+// this is a static method on the promise constructor.
+// in the case of reject there will be no resolve value so .then is not necessary and we simply do catch here.
+Promise.resolve('abc').then(x => console.log(x));
+Promise.reject(new Error('Problem!')).catch(x => console.error(x));
+*/
+/*
+//------------------------------- promisifying the geolocation api---------------------
+// Now we used the geolocation API before, and so let's start by reviewing how it works. So remember we use navigator .geolocation.getcurrentposition, and then this function here accepts two callbacks where the first is for the success and the second one is for the error. So this first callback function actually gets access to the position object. So let's pass that in as an argument to this callback function, then let's simply log that to the console. So this is our first callback, and now let's create a second callback with the error.
+
+// navigator.geolocation.getCurrentPosition(
+//   position => console.log(position),
+//   err => console.error(err)
+// );
+// so this is the asynchronous behaviour in exactly the way that we were talking about.
+// So we have a console.log after the geolocation. Now part here and still, this part here is locked first and so this one happens first and so that's because this function here basically offloaded its work to the background. So to the web API environment in the browser, and then immediately it moved on right here to the next line. So this is very clearly a callback based API. So we have to pass in these different callbacks and so this is another great opportunity to promisify a callback based API, to a promise based API. So let's do that
+
+const getPosition = function () {
+  return new Promise(function (resolve, reject) {
+    // navigator.geolocation.getCurrentPosition(position=>resolve(position), err=>reject(err));
+    // doing the above thing more simply
+    navigator.geolocation.getCurrentPosition(resolve, reject);
+    // now resolve itself here is the callback function which will be called with the position and the same ofcourse with the reject.
+  });
+};
+getPosition().then(pos => console.log(pos));
+
+const whereAmI = function () {
+  getPosition()
+    .then(pos => {
+      const { latitude: lat, longitude: lng } = pos.coords;
+      console.log(lat, lng);
+      // const lat = 51.50344025;
+      // const lng = 0.12770820958562096;
+      // whereAmI(51.50344025, 0.12770820958562096);
+      return fetch(
+        `https://us1.locationiq.com/v1/reverse?key=YOUR_API_KEY&lat=${lat}&lon=-${lng}&format=json&`
+      );
+    })
+    .then(response => {
+      // console.log(response);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch location data: (${response.status})`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log(data);
+      console.log(`you are in ${data.address.city}, ${data.address.country}`);
+
+      return fetch(
+        `https://restcountries.com/v3.1/name/${data.address.country}`
+      );
+    })
+    .then(res => {
+      if (!res.ok) {
+        throw new Error(`Country not found: ${res.status}`);
+      }
+      return res.json();
+    })
+    .then(data => renderCountry(data[0]))
+    .catch(err => console.error(`${err.message} 🎇🎇🎇`));
+};
+
+btn.addEventListener('click', whereAmI);
+*/
+// -----------------------CONSUMING PROMISES WITH ASYNC/AWAIT----------------------
+// there is now an even better and easier way to consume premises, which is called a sync await.
+// And we do this by simply adding a sync here in front of the function. And so this function is now an asynchronous function. So a function that will basically keep running in the background while performing the code that inside of it, then when this function is done, it automatically returns a premise,
+const getPosition = function () {
+  return new Promise(function (resolve, reject) {
+    navigator.geolocation.getCurrentPosition(resolve, reject);
+  });
+};
+const whereAmI = async function () {
+  // so inside the async function we can have one or more await statements.
+  // fetch(`https://restcountries.com/v3.1/name/${country}`).then(res=>console.log(res));
+  // so the below code is exactly the same we use to do with .then, it's just a different way of consuming the promises
+  // geolocation
+  const pos = await getPosition();
+  console.log(pos.coords.latitude, pos.coords.longitude);
+  // const { latitude: lat, longitude: lng } = pos.coords;
+  const lat = 51.50344025;
+  const lng = 0.12770820958562096;
+  // reverse geocoding
+  const resGeo = await fetch(
+    `https://us1.locationiq.com/v1/reverse?key=pk.604e7ca406ab02a693bf73b6cb63d16e&lat=${lat}&lon=-${lng}&format=json&`
+  );
+  const dataGeo = await resGeo.json();
+  // country data.
+
+  const res = await fetch(
+    `https://restcountries.com/v3.1/name/${dataGeo.address.country}`
+  );
+  // But anyway, as soon as this premise here is resolved, then the value of this whole await expression that we have here is going to be the resolved value of the premise. And so we can simply store that into a variable. So let's call it res
+  // console.log(res);
+  // so now we need the json out from this response. and this itself returns a new promise.
+  console.log(res);
+  const data = await res.json();
+  console.log(data);
+  renderCountry(data[0]);
+};
+// So this is the URL that we have been using. So make sure you grab it somewhere from your code. And so here, let's now pass in this country again. All right. So again, this year we'll return a premise. And so in an a sync function like this one, we can use the await keyword to basically await for the result of this premise. So basically await will stop decode execution at this point of the function until the premise is fulfilled. And so until the data has been fetched in this case, but now after that explanation, you might think isn't stopping the code, blocking the execution? Well, that's a really good question, but the answer is actually no, in this case, because stopping execution in an a sync function, which is what we have here is actually not a problem because this function is running asynchronously in the background. And so therefore it is not blocking the main threat of execution. So it's not blocking the call stack. And in fact, that's, what's so special about a async await.
+whereAmI();
+console.log('FIRST');
+// async await is only about consuming promises
+// so async await is just synthetic sugar for consuming promises
+
+// -----------------------ERROR HANDLING WITH try...catch---------------------
