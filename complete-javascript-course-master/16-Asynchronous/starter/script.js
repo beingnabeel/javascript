@@ -75,7 +75,7 @@ const renderCountry = function (data, className = '') {
           </article>
     `;
   countriesContainer.insertAdjacentHTML('beforeend', html);
-  // countriesContainer.style.opacity = 1;
+  countriesContainer.style.opacity = 1;
 };
 /*
 const getCountryAndNeighbour = function (country) {
@@ -345,3 +345,104 @@ getCountryDataAndNeighbour('australia');
 // and since we do that down here in our error handler, the best way of doing that is to indeed throw an error. And remember that this works, because throwing an error inside of this callback function of this then method will immediately reject this promise. And so then that rejected promise will travel down the chain until it is eventually caught somewhere. So again, in this case, it is right here in this catch handler.
 
 */
+
+// ------------------------CODING CHALLENGE: 1 ---------------------------
+/*
+const whereAmI = function (lat, lng) {
+  return fetch(
+    // `https://geocode.xyz/${lat},-${lng}?geoit=json&auth=YOUR_API_KEY`
+    `https://us1.locationiq.com/v1/reverse?key=YOUR_API_KEY&lat=${lat}&lon=-${lng}&format=json&`
+  )
+    .then(response => {
+      // console.log(response);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch location data: (${response.status})`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log(data);
+      console.log(`you are in ${data.address.city}, ${data.address.country}`);
+
+      return fetch(
+        `https://restcountries.com/v3.1/name/${data.address.country}`
+      );
+    })
+    .then(res => {
+      if (!res.ok) {
+        throw new Error(`Country not found: ${res.status}`);
+      }
+      return res.json();
+    })
+    .then(data => renderCountry(data[0]))
+    .catch(err => console.error(`${err.message} 🎇🎇🎇`));
+};
+
+// whereAmI(51.50344025, 0.12770820958562096);
+// 51.50354
+// 0.12768
+// pk.604e7ca406ab02a693bf73b6cb63d16e
+// whereAmI(52.508, 13.381);
+// whereAmI(19.037, 72.873);
+// whereAmI(-33.933, 18.474);
+*/
+/*
+//----------------------asynchronous BEHIND THE SCENES: THE EVENT LOOP ---------------
+// ------------- THE EVENT LOOP IN PRACTICE ---------------------
+console.log('Test start');
+setTimeout(() => {
+  console.log('0 sec timer');
+  // after 0 sec this callback will be put on callback queue
+}, 0);
+// now lets build a promise that resolves immediately
+// So promise.resolve, basically allows us to build a promise, so to create a promise that is immediately resolved. So one that immediately has a success value. And so that fulfilled, success value, is gonna be this one we passed in here. So resolved, promise, one, and then we can handle that resolved promise. And so that, our response we can then simply log it to the console.
+Promise.resolve('Resolved promise').then(res => console.log(res));
+Promise.resolve('Resolved promise 2').then(res => {
+  for (let i = 0; i < 100000000; i++) {}
+  // becoz of this line our settimeout func. will take more than 0 secs. becoz our microtask queue is enaged and it will be executed first then after the callback queue func. will be executed.
+  // so the 0 seconds in the settimeout is not a gaurantee that it will be executed at the same time. it depends on all of these factors.
+  console.log(res);
+});
+console.log('Test end');
+// refer notes to know the order of execution
+// test start and test end will be printed first becoz they are top level code (globle execution context)
+// settimeout callback and promise both will run at the same time and settimeout should be printed first but it is not the case here the promise is printed first because the microtask queue has priority over callback queue.
+*/
+
+//---------------BUILDING A SIMPLE PROMISE ---------------------
+// a fulfilled promise means to win a lottery and rejected promise means to loose a lottery
+// promises are just special kind of object in js
+// now the promise constructor takes exactly one argument and that is the so called executor function
+// Now, as soon as the promise constructor runs, it will automatically execute this executor function that we pass in. And as it executes this function here, it will do so by passing in two other arguments. And those arguments are the resolve and reject functions. So reject like this. So we will use them here in a second, but for now let's actually build this executor function.
+// here there is a 50-50 chance of winning a lottery so if the Math.random()>0.5 then we say the promise is fulfilled and in order to set the promise as fulfilled we use the resolve function, so calling the resolve function will make this promise as a fulfilled promise
+// So again, whatever value we pass into the resolve function here is gonna be the result of the promise that will be available in the den handler. And so in this case, let's simply pass in a string here
+// And so now let's handle the opposite case. So where we basically want to Mark this promise as rejected. And so, as you can imagine for that we can call the reject function. Then into the reject function, we pass in the error message that we later want to be able in the catch handler, so in the catch method. So here, let's just say you lost your money and then just some poop emoji.
+
+const lotteryPromise = new Promise(function (resolve, reject) {
+  console.log('Lottery draw is happening');
+  // now by using this timer, we did actually encapsulate some asynchronous behavior into this promise.
+  setTimeout(() => {
+    if (Math.random() >= 0.5) {
+      resolve('You win 🎖');
+      // so when we consume this promise this is going to be our response
+    } else {
+      // here we are creating a new Error object instead of a string
+      reject(new Error('You lost your money 💩'));
+      // and this is going to be our error
+    }
+  }, 2000);
+});
+// So just to quickly recap, before we consume this promise here, we created an executor function which is gonna be called by this promise constructor as soon as it runs, so basically immediately. Then the promise calls this function and passes in the resolve and the reject functions so that we can then use them to mark the promise as either resolved so as fulfilled or as to rejected. And so you see that this promise is eventually going to move to either the fulfilled state or the rejected state. So we always need to make sure that the promise ends up in one of these two states. And so now it's time to actually try this out by consuming this promise that we just built.
+// now consuming the promise
+lotteryPromise.then(res => console.log(res)).catch(err => console.error(err));
+
+// Now, in practice, most of the time all we actually do is to consume promises. And we usually only built promises to basically wrap old callback based functions into promises. And this is a process that we call promisifying. So basically promisifying means to convert callback based asynchronous behavior to promise based. Let's see that in action a little bit.
+
+// so here we are gonna promisify the settimeout function and create a wait function
+// Promisifying setTimout function
+const wait = function (seconds) {
+  // so now inside of this function we will actually create and return the promise
+  // so creating a function and then returning a promise and so this will then encapsulate the asynchronous operation even further.
+  // so essentially that's also what the fetch function does.
+  // so it's a function that returns a promise, its more real world example.
+};
