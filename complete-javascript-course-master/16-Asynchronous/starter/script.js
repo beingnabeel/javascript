@@ -2,6 +2,19 @@
 
 const btn = document.querySelector('.btn-country');
 const countriesContainer = document.querySelector('.countries');
+const getPosition = function () {
+  return new Promise(function (resolve, reject) {
+    navigator.geolocation.getCurrentPosition(resolve, reject);
+  });
+};
+const getJSON = function (url, errorMsg = 'Something went wrong') {
+  return fetch(url).then(response => {
+    if (!response.ok) {
+      throw new Error(`${errorMsg} (${response.status})`);
+    }
+    return response.json();
+  });
+};
 /*
 ///////////////////////////////////////
 // this is the old school way of doing AJAX in JavaScript. But I'm still showing it to you for two reasons. So first, I want you to know that XML HTTP requests exists, because you might actually need it in the future. And second, I want to show you how AJAX calls used to be handled with events and callback functions. And so only after that we should move on to a more modern way of handling asynchronous JavaScript, which is gonna be a feature called Promises.
@@ -75,6 +88,10 @@ const renderCountry = function (data, className = '') {
           </article>
     `;
   countriesContainer.insertAdjacentHTML('beforeend', html);
+  countriesContainer.style.opacity = 1;
+};
+const renderError = function (msg) {
+  countriesContainer.insertAdjacentText('beforeend', msg);
   countriesContainer.style.opacity = 1;
 };
 /*
@@ -550,6 +567,7 @@ const whereAmI = function () {
 
 btn.addEventListener('click', whereAmI);
 */
+/*
 // -----------------------CONSUMING PROMISES WITH ASYNC/AWAIT----------------------
 // there is now an even better and easier way to consume premises, which is called a sync await.
 // And we do this by simply adding a sync here in front of the function. And so this function is now an asynchronous function. So a function that will basically keep running in the background while performing the code that inside of it, then when this function is done, it automatically returns a premise,
@@ -570,7 +588,7 @@ const whereAmI = async function () {
   const lng = 0.12770820958562096;
   // reverse geocoding
   const resGeo = await fetch(
-    `https://us1.locationiq.com/v1/reverse?key=pk.604e7ca406ab02a693bf73b6cb63d16e&lat=${lat}&lon=-${lng}&format=json&`
+    `https://us1.locationiq.com/v1/reverse?key=YOUR_API_KEY&lat=${lat}&lon=-${lng}&format=json&`
   );
   const dataGeo = await resGeo.json();
   // country data.
@@ -591,5 +609,158 @@ whereAmI();
 console.log('FIRST');
 // async await is only about consuming promises
 // so async await is just synthetic sugar for consuming promises
-
+*/
+/*
 // -----------------------ERROR HANDLING WITH try...catch---------------------
+// with async await we can't use the catch method for error handling because we can't attatch it anywhere, so instead we use something called as try catch statement.
+// So we can basically wrap all our code in a try block. And so JavaScript will then basically try to execute this code.
+// try {
+//   let y = 1;
+//   const x = 2;
+//   x = 3;
+// } catch (err) {
+//   alert(err.message);
+// }
+// here this catch block will have access to whatever error here has occurred in the catch block.
+const getPosition = function () {
+  return new Promise(function (resolve, reject) {
+    navigator.geolocation.getCurrentPosition(resolve, reject);
+  });
+};
+const whereAmI = async function () {
+  try {
+    const pos = await getPosition();
+    const lat = 51.50344025;
+    const lng = 0.12770820958562096;
+    // reverse geocoding
+    const resGeo = await fetch(
+      `https://us1.locationiq.com/v1/reverse?key=YOUR_API_KEY&lat=${lat}&lon=-${lng}&format=json&`
+    );
+    if (!resGeo.ok) throw new Error('Problem getting location data');
+    const dataGeo = await resGeo.json();
+    // country data.
+
+    const res = await fetch(
+      `https://restcountries.com/v3.1/name/${dataGeo.address.country}`
+    );
+    if (!res.ok) throw new Error('Problem getting the country data');
+    const data = await res.json();
+    console.log(data);
+    renderCountry(data[0]);
+  } catch (err) {
+    console.error(`${err} 🎇🎇`);
+    renderError(`   🎇 ${err.message}`);
+    // so here we need to manually create an error and that error will be then caught by the catch block.
+  }
+};
+whereAmI();
+// whereAmI();
+// whereAmI();
+// whereAmI();
+// whereAmI();
+console.log('FIRST');
+*/
+/*
+// ----------------------RETURNING VALUES FROM ASYNC FUNCTIONS-----------------------
+const getPosition = function () {
+  return new Promise(function (resolve, reject) {
+    navigator.geolocation.getCurrentPosition(resolve, reject);
+  });
+};
+const whereAmI = async function () {
+  try {
+    const pos = await getPosition();
+    const lat = 51.50344025;
+    const lng = 0.12770820958562096;
+    // reverse geocoding
+    const resGeo = await fetch(
+      `https://us1.locationiq.com/v1/reverse?key=YOUR_API_KEY&lat=${lat}&lon=-${lng}&format=json&`
+    );
+    if (!resGeo.ok) throw new Error('Problem getting location data');
+    const dataGeo = await resGeo.json();
+    // country data.
+
+    const res = await fetch(
+      `https://restcountries.com/v3.1/name/${dataGeo.address.country}`
+    );
+    if (!res.ok) throw new Error('Problem getting the country data');
+    const data = await res.json();
+    console.log(data);
+    renderCountry(data[0]);
+    return `you are in ${dataGeo.address.city}, ${dataGeo.address.country}`;
+  } catch (err) {
+    console.error(`${err} 🎇🎇`);
+    renderError(`   🎇 ${err.message}`);
+    // so here we need to manually create an error and that error will be then caught by the catch block.
+    // Reject promise returned from async function.
+    throw err;
+  }
+};
+// So even though there was an error in the async function, the promise that the async function returns is still fulfilled and not rejected, right? And in fact, if we add a catch handler here, then let's see what happens. So console.error, error.message, then our emoji here. And actually let's add a two here. So the sequence is kind of one, two, three, and let's do the same here. All right? And so we should still get the error from here and indeed we do, but still it is this callback here that is executed. So that's why we get two undefined and not the catch block. And so again, what that means is that even though there was an error in the async function, the promise that it returns is still fulfilled. Now, if we wanted to fix that, if we want to be able to catch that error here as well, then we would have to rethrow that error right here. Rethrowing the error means to basically throw the error again so that we can then propagate it down. And so with that, we will manually reject a promise that's returned from the async function. So let's say reject promise returned from async function. So here we can now take the error and throw it again. So throw error, and so now we get the same error here as we had here. So again, it's, cannot read property flag of undefined and here the same and with this too. So it just coming from here. And so sometimes it's important to do this. And so rethrowing an error is then the correct solution
+console.log('1: will get location');
+// whereAmI();
+// so this async function is running in the background so js moves to the next line and executes the other code.
+//top level code will be executed first.
+// const city = whereAmI();
+// console.log(city);
+// now if we want to return some data from this async function.
+// so if we are returning something from the whereAmI funtion and then storing it in a variable then a promise will be returned from here.
+// Now the value that we return from an async function, so again, that's this string here will become the fulfilled value of the promise that is returned by the function. And so that's important to understand. So again, this promise that we see down here, the fulfilled value of that promise is going to be this string here, because that is the value that we return from the async function while at least if there is no error here happening in the function,
+// whereAmI()
+//   .then(city => console.log(`2: ${city}`))
+//   .catch(err => console.error(`2: ${err.message}`))
+//   .finally(() => console.log('3. Finished getting location'));
+// using async await here instead of this
+// whereAmI();
+// whereAmI();
+// whereAmI();
+// whereAmI();
+// console.log('3. Finished getting location');
+// now at this point of time await doesn't work without async fucntion, it can only be used inside async function.
+// we don't want a complete new fucntion here we can use, IIFE
+//  syntax: (function(){
+// })()
+
+(async function () {
+  try {
+    const city = await whereAmI();
+    console.log(city);
+  } catch (err) {
+    console.error(`2: ${err.message}`);
+  }
+  console.log('3. Finished getting location');
+})();
+*/
+// -----------------RUNNING PROMISES IN PARALLEL -----------------------
+// Let's now imagine that we wanted to get some data about three countries at the same time, but in which the order that the data arrives does not matter at all.
+// we should always use try catch block inside the async function.
+const get3Countries = async function (c1, c2, c3) {
+  try {
+    // const [data1] = await getJSON(`https://restcountries.com/v3.1/name/${c1}`);
+    // const [data2] = await getJSON(`https://restcountries.com/v3.1/name/${c2}`);
+    // const [data3] = await getJSON(`https://restcountries.com/v3.1/name/${c3}`);
+    // But if we think about what we did here, then maybe it actually doesn't make so much sense because what we did here basically was to run all these Ajax calls one after another, even though the result of the second one here does not depend on the first one, and the result of the third one does also not depend on any of the other ones. And so actually this doesn't make much sense. Why should the second Ajax call wait for the first one?
+    // console.log([data1.capital[0], data2.capital[0], data3.capital[0]]);
+    //so instead of running these promises in sequence we can run them in parallel becoz they doesn't depend on each othr.
+    // so for that we use promise.all combinator function.
+    // so this is kind of helper function for the promise constructor., now this function here takes in an array of promises and it will return a new promise which will then run all the promises in the array at the same time.
+    const data = await Promise.all([
+      getJSON(`https://restcountries.com/v3.1/name/${c1}`),
+      getJSON(`https://restcountries.com/v3.1/name/${c2}`),
+      getJSON(`https://restcountries.com/v3.1/name/${c3}`),
+    ]);
+    // here you need to keep in mind that if any of the promise is rejected then the whole promise.all actually rejects as well
+    // so we say promise.all shortcircuits when one promise rejects.
+    // so this will retun a promies so we use await keyword and store that promise in a variable
+    // console.log(data1);
+    // console.log(data2);
+    // console.log(data3);
+    // console.log(data);
+    console.log(data);
+    console.log(data.map(d => d[0].capital[0]));
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+get3Countries('portugal', 'usa', 'canada');
